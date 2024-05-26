@@ -30,6 +30,19 @@ dependencies {
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 	annotationProcessor("org.projectlombok:lombok")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	testImplementation("org.springframework.security:spring-security-test")
+	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+	implementation("org.postgresql:postgresql")
+	implementation("org.springframework.boot:spring-boot-starter-actuator")
+	runtimeOnly("io.micrometer:micrometer-registry-prometheus")
+	implementation("org.springframework.boot:spring-boot-starter")
+	implementation("org.springframework.boot:spring-boot-starter-security")
+	implementation("io.jsonwebtoken:jjwt-api:0.11.5")
+	implementation("io.jsonwebtoken:jjwt-impl:0.11.5")
+	implementation("io.jsonwebtoken:jjwt-jackson:0.11.5")
+	implementation("org.springframework.boot:spring-boot-starter-mail:3.1.5")
+	implementation("com.fasterxml.uuid:java-uuid-generator:4.0.1")
+	implementation("org.springframework.cloud:spring-cloud-starter-gateway-mvc:4.1.3")
 }
 
 tasks.withType<Test> {
@@ -51,4 +64,43 @@ tasks.jacocoTestReport {
        csv.required.set(false)
        html.outputLocation.set(layout.buildDirectory.dir("jacocoHtml"))
    }
+}
+
+tasks.register<Test>("unitTest"){
+	description = "Runs unit test."
+	group = "verification"
+
+	filter{
+		excludeTestsMatching("*FunctionalTest")
+	}
+}
+
+tasks.register<Test>("functionalTest"){
+	description = "Runs functional test."
+	group = "verification"
+
+	filter{
+		excludeTestsMatching("*FunctionalTest")
+	}
+}
+
+tasks.withType<Test>().configureEach {
+	useJUnitPlatform()
+}
+
+tasks.test {
+	filter {
+		excludeTestsMatching("*FunctionalTest")
+	}
+
+	finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+	dependsOn(tasks.test)
+
+	reports {
+		html.required = true
+		xml.required = true
+	}
 }
