@@ -3,6 +3,15 @@ plugins {
 	id("org.springframework.boot") version "3.2.4"
 	id("io.spring.dependency-management") version "1.1.4"
 	jacoco
+	id("org.sonarqube") version "4.4.1.3373"
+}
+
+sonar {
+	properties {
+		property("sonar.projectKey", "advpro-c9_gametime-autentikasi")
+		property("sonar.organization", "advpro-c9")
+		property("sonar.host.url", "https://sonarcloud.io")
+	}
 }
 
 group = "id.ac.ui.cs.advprog"
