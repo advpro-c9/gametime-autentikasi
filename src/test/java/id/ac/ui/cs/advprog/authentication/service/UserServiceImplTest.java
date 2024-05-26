@@ -16,8 +16,10 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @ExtendWith(MockitoExtension.class)
 public class UserServiceImplTest {
@@ -27,53 +29,58 @@ public class UserServiceImplTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
-    @InjectMocks
     private UserServiceImpl userService;
 
     private User user;
 
-    private final UUID id = UUID.randomUUID();
-
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        userService = new UserServiceImpl();
+        userService.userRepository = userRepository;
+        userService.passwordEncoder = passwordEncoder;
+
         user = new User();
-        user.setId(id);
+        user.setId(UUID.randomUUID());
         user.setEmail("test@example.com");
         user.setUsername("testuser");
         user.setBio("Bio");
         user.setProfilePicture("profile.jpg");
-        user.setPassword("hashedpassword");
     }
 
     @Test
-    void updateProfile_success() {
-        when(userRepository.save(any(User.class))).thenReturn(user);
-        when(passwordEncoder.encode(any(String.class))).thenReturn("newhashedpassword");
+    void findByEmail_success() throws Exception {
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
 
-        User updatedUser = userService.updateProfile(user, "newusername", "New bio", "newprofile.jpg", "newpassword");
+        CompletableFuture<Optional<User>> foundUserFuture = userService.findByEmail("test@example.com");
+        Optional<User> foundUser = foundUserFuture.get();
 
-        assertEquals("newusername", updatedUser.getUsername());
-        assertEquals("New bio", updatedUser.getBio());
-        assertEquals("newprofile.jpg", updatedUser.getProfilePicture());
-        assertEquals("newhashedpassword", updatedUser.getPassword());
+        assertTrue(foundUser.isPresent());
+        assertEquals("testuser", foundUser.get().getUsername());
     }
 
     @Test
-    void findByEmail_success() {
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
-        Optional<User> foundUser = userService.findByEmail("test@example.com");
+    void findByUsername_success() throws Exception {
+        when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(user));
+
+        CompletableFuture<Optional<User>> foundUserFuture = userService.findByUsername("testuser");
+        Optional<User> foundUser = foundUserFuture.get();
 
         assertTrue(foundUser.isPresent());
         assertEquals("test@example.com", foundUser.get().getEmail());
     }
 
     @Test
-    void findByUsername_success() {
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
-        Optional<User> foundUser = userService.findByUsername("testuser");
+    void updateProfile_success() throws Exception {
+        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(passwordEncoder.encode(anyString())).thenReturn("hashednewpassword");
 
-        assertTrue(foundUser.isPresent());
-        assertEquals("testuser", foundUser.get().getUsername());
+        CompletableFuture<User> updatedUserFuture = userService.updateProfile(user, "newusername", "New bio", "newprofile.jpg", "newpassword");
+        User updatedUser = updatedUserFuture.get();
+
+        assertEquals("newusername", updatedUser.getUsername());
+        assertEquals("New bio", updatedUser.getBio());
+        assertEquals("newprofile.jpg", updatedUser.getProfilePicture());
+        assertEquals("hashednewpassword", updatedUser.getPassword());
     }
 }
